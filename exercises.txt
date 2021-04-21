@@ -1,0 +1,91 @@
+Exercice
+===========
+
+Remarque :
+
+
+1. React-native navigation
+----------------------------
+1.1 Create a custom header for the route "ChatRoom" with image of the user
+	=> send image as params of  the route (ChatRoom)
+	=> declare custom header bar
+
+2. Realtime push notifications
+----------------------------------
+2.1 Subscribe to onCreateMessage for new messages within the chatroom we're part of (ChatRoomScreen)
+https://docs.aws.amazon.com/appsync/latest/devguide/aws-appsync-real-time-data.html
+
+type Mutation {
+  createMessage(input: CreateMessageInput!, condition: ModelMessageConditionInput): Message
+}
+
+type Subscription {
+  onCreateMessage(chatRoomID: ID!): Message
+    @aws_subscribe(mutations: ["createMessage"])
+}
+
+2.2 Subscribe to onChatRoomUpdate for the chatrooms of the user (ChatsScreen)
+
+type Subscription {
+  onCreateMessage(chatRoomID: ID!): Message
+    @aws_subscribe(mutations: ["createMessage"])
+}
+
+
+
+3. Improvement or idea of exercises
+-------------------------------------
+3.1 Pagination
+  => AWS Amplify graphql pagination use nextToken to pass the id of the next page. If the nextToken is null it mean no other page exist.
+
+Exemple :
+query MyQuery{
+	listUsers(limit: 2, nextToken: "NEXT_TOKEN_RECEIVED"){
+		items{
+			id
+			content
+		}
+		nextToken // id of the next page of items received from graphql server pagination
+	}
+}
+
+3.2 Adding people to the chatroom (groups) and chatroom name
+3.3 Updating user data (name, status)
+3.4 Emojis
+
+4. Extra challenge
+--------------------
+4.1 Sending voice messages
+4.2 Sending media files
+
+Infos:
+	=> Add Storage service to your amplify project (media are saved in S3 storage from AWS Services and an url is given to access it)
+	=> after storage, save the url of the image/video/audio to your GraphQL Database
+	=> use the url when needed
+
+Examples : Twitter Clone - Save image/video with the message
+
+
+
+
+
+
+mutation MyMutation {
+  createMessage(input: {
+    userID: "feead7b3-6870-4233-a6be-0666b17df4e3",
+    content: "Hi Irak, are u ok?",
+    chatRoomID: "2c3a193d-9805-47f9-8df0-c423c15c46bb"
+  }) {
+    id
+  }
+}
+
+mutation MyMutation {
+  updateChatRoom(input: {
+    id: "39d909f1-c236-4f39-90a3-b45db9b5b3b2",
+    lastMessageID: "8bdb30dc-4bc2-45d5-a8df-b32fb49f18ef"
+  }) {
+    id
+  }
+}
+

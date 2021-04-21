@@ -1,0 +1,163 @@
+type User @model {
+  id: ID!
+  name: String!  #  permet d'effectuer des recherches par filtrage de l'attribut
+  imageUri: String
+  status: String
+  chatRoomUsers: [ChatRoomUser] @connection(keyName: "byUser", fields: ["id"])
+  messages: [Message] @connection(keyName: "byUserMessage", fields: ["id"])
+}
+
+# fields second parameter is the sort field.
+# queryField allow the define a query name for this index
+# this will allow to query for all messages of a chatroom by his chatRoomID and receive message sorted on property 'createdAt'
+type Message
+@model
+@key(
+  name:"byChatRoomMessage",
+  fields: ["chatRoomID","createdAt"],
+  queryField: "messagesByChatRoom"
+)
+@key(
+  name: "byUserMessage",
+  fields: ["userID","chatRoomID"]
+){
+  id: ID!
+  createdAt: String!
+  chatRoomID: ID!
+  userID: ID!
+  chatRoom: ChatRoom @connection(fields: ["chatRoomID"])
+  user: User @connection(fields: ["userID"])
+  content: String
+}
+
+
+type ChatRoom @model{
+  id: ID!
+  # list of users
+  chatRoomUsers: [ChatRoomUser] @connection(keyName: "byChatRoom", fields:["id"])
+  # list of messages One-To-Many
+  messages: [Message] @connection(keyName: "byChatRoomMessage", fields: ["id"])
+  # One-To-One
+  lastMessageID: ID!
+  lastMessage: Message @connection(fields: ["lastMessageID"])
+}
+
+# As Chatroom - User is many-to-many relationship
+# Need to create a tab to connect
+# ChatRoom ManyToOne ChatRoomUser - OneToMany - User
+type ChatRoomUser
+@model
+@key(name: "byUser", fields: ["userID", "chatRoomID"])
+@key(name: "byChatRoom", fields: ["chatRoomID","userID"])
+{
+  id: ID!
+  userID: ID!
+  chatRoomID: ID!
+  user: User @connection(fields: ["userID"]) # OneToOne no keyName needed
+  chatRoom: ChatRoom @connection(fields: ["chatRoomID"]) # OneToOne no keyName needed
+}
+
+#type Blog @model {
+#  id: ID!
+#  name: String!
+#  posts: [Post] @connection(keyName: "byBlog", fields: ["id"])
+#}
+
+#type Post @model @key(name: "byBlog", fields: ["blogID"]) {
+#  id: ID!
+#  title: String!
+#  blogID: ID!
+#  blog: Blog @connection(fields: ["blogID"])
+#  comments: [Comment] @connection(keyName: "byPost", fields: ["id"])
+#}
+
+#type Comment @model @key(name: "byPost", fields: ["postID", "content"]) {
+#  id: ID!
+#  postID: ID!
+#  post: Post @connection(fields: ["postID"])
+#  content: String!
+#}
+
+enum ModelAttributeTypes {
+  binary
+  binarySet
+  bool
+  list
+  map
+  number
+  numberSet
+  string
+  stringSet
+  _null
+}
+
+input ModelSizeInput {
+  ne: Int
+  eq: Int
+  le: Int
+  lt: Int
+  ge: Int
+  gt: Int
+  between: [Int]
+}
+
+input ModelIDInput {
+  ne: ID
+  eq: ID
+  le: ID
+  lt: ID
+  ge: ID
+  gt: ID
+  contains: ID
+  notContains: ID
+  between: [ID]
+  beginsWith: ID
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+  size: ModelSizeInput
+}
+
+input ModelStringInput {
+  ne: String
+  eq: String
+  le: String
+  lt: String
+  ge: String
+  gt: String
+  contains: String
+  notContains: String
+  between: [String]
+  beginsWith: String
+  attributeExists: Boolean
+  attributeType: ModelAttributeTypes
+  size: ModelSizeInput
+}
+
+input CreateMessageInput {
+  id: ID
+  createdAt: String
+  chatRoomID: ID!
+  userID: ID!
+  content: String
+}
+
+input ModelMessageConditionInput {
+  createdAt: ModelStringInput
+  chatRoomID: ModelIDInput
+  userID: ModelIDInput
+  content: ModelStringInput
+  and: [ModelMessageConditionInput]
+  or: [ModelMessageConditionInput]
+  not: ModelMessageConditionInput
+}
+
+type Mutation {
+  createMessage(input: CreateMessageInput!, condition: ModelMessageConditionInput): Message
+}
+
+type Subscription {
+  onCreateMessage(chatRoomID: ID!): Message
+    @aws_subscribe(mutations: ["createMessage"])
+}
+
+
